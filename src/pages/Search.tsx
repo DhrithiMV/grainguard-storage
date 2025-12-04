@@ -1,28 +1,61 @@
-import { useState } from 'react';
-import { ArrowLeft, Search as SearchIcon, MapPin, List, Map } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { ArrowLeft, Search as SearchIcon, MapPin, List, Map, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useMapbox } from '@/contexts/MapboxContext';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { calculateDistance, formatDistance } from '@/lib/geolocation';
 import BottomNav from '@/components/BottomNav';
 import StorageCard from '@/components/StorageCard';
+import MapView from '@/components/MapView';
+import MapboxTokenInput from '@/components/MapboxTokenInput';
 import { cn } from '@/lib/utils';
 
-const mockStorages = [
-  { id: '1', name: 'Bengaluru Cold Storage', distance: '2.5 km', rating: 4.8, capacity: 5000, price: 12, grains: ['Wheat', 'Rice'] },
-  { id: '2', name: 'AgriCool Warehouse', distance: '4.2 km', rating: 4.5, capacity: 8000, price: 10, grains: ['Maize', 'Pulses'] },
-  { id: '3', name: 'FarmStore Hub', distance: '6.1 km', rating: 4.7, capacity: 3500, price: 15, grains: ['Wheat', 'Barley'] },
-  { id: '4', name: 'KrishiCold Center', distance: '8.3 km', rating: 4.6, capacity: 6000, price: 11, grains: ['Rice', 'Millet'] },
-  { id: '5', name: 'GreenGrain Storage', distance: '10.5 km', rating: 4.4, capacity: 4500, price: 13, grains: ['Wheat', 'Maize'] },
+const baseStorages = [
+  { id: '1', name: 'Bengaluru Cold Storage', rating: 4.8, capacity: 5000, price: 12, grains: ['Wheat', 'Rice'], lat: 12.9816, lng: 77.5946 },
+  { id: '2', name: 'AgriCool Warehouse', rating: 4.5, capacity: 8000, price: 10, grains: ['Maize', 'Pulses'], lat: 12.9352, lng: 77.6245 },
+  { id: '3', name: 'FarmStore Hub', rating: 4.7, capacity: 3500, price: 15, grains: ['Wheat', 'Barley'], lat: 12.9998, lng: 77.5510 },
+  { id: '4', name: 'KrishiCold Center', rating: 4.6, capacity: 6000, price: 11, grains: ['Rice', 'Millet'], lat: 12.9150, lng: 77.6400 },
+  { id: '5', name: 'GreenGrain Storage', rating: 4.4, capacity: 4500, price: 13, grains: ['Wheat', 'Maize'], lat: 13.0200, lng: 77.5700 },
 ];
 
 const Search = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { mapboxToken, isTokenValid } = useMapbox();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
-  const filteredStorages = mockStorages.filter((s) =>
+  const { latitude, longitude, isLoading: isLocating, getLocation, error: locationError } = useGeolocation();
+
+  // Calculate distances based on user location
+  const storagesWithDistance = useMemo(() => {
+    const userLat = latitude || 12.9716; // Default to Bengaluru center
+    const userLng = longitude || 77.5946;
+
+    return baseStorages
+      .map((storage) => {
+        const distanceKm = calculateDistance(userLat, userLng, storage.lat, storage.lng);
+        return {
+          ...storage,
+          distance: formatDistance(distanceKm),
+          distanceKm,
+        };
+      })
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }, [latitude, longitude]);
+
+  const filteredStorages = storagesWithDistance.filter((s) =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleFacilitySelect = (facility: typeof storagesWithDistance[0]) => {
+    navigate(`/storage/${facility.id}`);
+  };
+
+  const handleGetLocation = () => {
+    getLocation();
+  };
 
   return (
     <div className="page-container bg-background">
@@ -77,25 +110,57 @@ const Search = () => {
         </button>
       </div>
 
-      {/* Use Location Button */}
-      <button className="w-full p-3 mb-4 bg-accent/10 text-accent rounded-xl flex items-center justify-center gap-2 font-medium">
-        <MapPin className="w-4 h-4" />
-        {t('chooseLocation')}
-      </button>
-
       {/* Content */}
       {viewMode === 'list' ? (
-        <div className="space-y-3 animate-fade-up">
-          {filteredStorages.map((storage) => (
-            <StorageCard key={storage.id} {...storage} />
-          ))}
-        </div>
+        <>
+          {/* Use Location Button */}
+          <button
+            onClick={handleGetLocation}
+            disabled={isLocating}
+            className="w-full p-3 mb-4 bg-accent/10 text-accent rounded-xl flex items-center justify-center gap-2 font-medium disabled:opacity-50"
+          >
+            {isLocating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <MapPin className="w-4 h-4" />
+            )}
+            {isLocating ? 'Getting location...' : latitude ? 'Location found • Tap to refresh' : t('chooseLocation')}
+          </button>
+
+          {locationError && (
+            <p className="text-sm text-destructive mb-4 text-center">{locationError}</p>
+          )}
+
+          {latitude && (
+            <p className="text-xs text-muted-foreground mb-4 text-center">
+              Showing {filteredStorages.length} facilities sorted by distance
+            </p>
+          )}
+
+          <div className="space-y-3 animate-fade-up">
+            {filteredStorages.map((storage) => (
+              <StorageCard key={storage.id} {...storage} />
+            ))}
+          </div>
+        </>
       ) : (
-        <div className="h-[50vh] bg-muted rounded-2xl flex items-center justify-center">
-          <div className="text-center">
-            <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-            <p className="text-muted-foreground">Map View</p>
-            <p className="text-xs text-muted-foreground mt-1">Connect Mapbox for full functionality</p>
+        <div className="space-y-4 animate-fade-up">
+          {/* Mapbox Token Input */}
+          {!isTokenValid && <MapboxTokenInput />}
+
+          {/* Map View */}
+          <MapView
+            facilities={filteredStorages}
+            onFacilitySelect={handleFacilitySelect}
+            mapboxToken={mapboxToken}
+          />
+
+          {/* Facility List below map */}
+          <div className="space-y-3 mt-4">
+            <h3 className="font-semibold text-foreground">{t('nearbyStorage')}</h3>
+            {filteredStorages.slice(0, 3).map((storage) => (
+              <StorageCard key={storage.id} {...storage} />
+            ))}
           </div>
         </div>
       )}
