@@ -11,6 +11,8 @@ interface StorageCardProps {
   capacity: number;
   price: number;
   grains: string[];
+  lat?: number;
+  lng?: number;
 }
 
 const StorageCard = ({ id, name, distance, rating, capacity, price, grains }: StorageCardProps) => {
@@ -41,7 +43,13 @@ const StorageCard = ({ id, name, distance, rating, capacity, price, grains }: St
         </p>
         <div className="flex items-center justify-between mt-2">
           <span className="text-sm font-medium text-primary">₹{price}/kg/mo</span>
-          <button className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/storage/${id}`);
+            }}
+            className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
             {t('reserve')}
           </button>
         </div>
