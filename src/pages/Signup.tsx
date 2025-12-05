@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 import { toast } from 'sonner';
 
@@ -12,7 +11,6 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -21,9 +19,8 @@ const Signup = () => {
     confirmPassword: '',
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -32,46 +29,8 @@ const Signup = () => {
       toast.error('Please agree to Terms & Conditions');
       return;
     }
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: formData.fullName,
-            phone: formData.phone,
-          },
-        },
-      });
-
-      if (error) {
-        if (error.message.includes('already registered')) {
-          toast.error('This email is already registered. Please sign in instead.');
-        } else {
-          toast.error(error.message);
-        }
-        return;
-      }
-
-      if (data.user) {
-        toast.success('Account created successfully!');
-        navigate('/language');
-      }
-    } catch (error) {
-      toast.error('An unexpected error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    toast.success('Account created successfully!');
+    navigate('/language');
   };
 
   return (
@@ -96,7 +55,6 @@ const Signup = () => {
           onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
           className="input-field"
           required
-          disabled={isLoading}
         />
 
         <input
@@ -106,7 +64,6 @@ const Signup = () => {
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           className="input-field"
           required
-          disabled={isLoading}
         />
 
         <input
@@ -115,7 +72,6 @@ const Signup = () => {
           value={formData.phone}
           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
           className="input-field"
-          disabled={isLoading}
         />
 
         <div className="relative">
@@ -126,7 +82,6 @@ const Signup = () => {
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             className="input-field pr-12"
             required
-            disabled={isLoading}
           />
           <button
             type="button"
@@ -145,7 +100,6 @@ const Signup = () => {
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
             className="input-field pr-12"
             required
-            disabled={isLoading}
           />
           <button
             type="button"
@@ -162,7 +116,6 @@ const Signup = () => {
             checked={agreedToTerms}
             onChange={(e) => setAgreedToTerms(e.target.checked)}
             className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary"
-            disabled={isLoading}
           />
           <span className="text-sm text-muted-foreground">
             {t('termsAgree')}{' '}
@@ -174,10 +127,9 @@ const Signup = () => {
 
         <button
           type="submit"
-          disabled={isLoading}
-          className="w-full py-4 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-4 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]"
         >
-          {isLoading ? 'Creating account...' : t('signUp')}
+          {t('signUp')}
         </button>
 
         <p className="text-center text-sm text-muted-foreground">
