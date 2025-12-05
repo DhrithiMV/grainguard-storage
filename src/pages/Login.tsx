@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 import { toast } from 'sonner';
 
@@ -9,16 +10,40 @@ const Login = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock login
-    toast.success('Welcome back!');
-    navigate('/language');
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Invalid email or password');
+        } else {
+          toast.error(error.message);
+        }
+        return;
+      }
+
+      if (data.user) {
+        toast.success('Welcome back!');
+        navigate('/home');
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -44,6 +69,7 @@ const Login = () => {
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             className="input-field"
             required
+            disabled={isLoading}
           />
         </div>
 
@@ -55,6 +81,7 @@ const Login = () => {
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             className="input-field pr-12"
             required
+            disabled={isLoading}
           />
           <button
             type="button"
@@ -67,9 +94,10 @@ const Login = () => {
 
         <button
           type="submit"
-          className="w-full py-4 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]"
+          disabled={isLoading}
+          className="w-full py-4 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {t('signIn')}
+          {isLoading ? 'Signing in...' : t('signIn')}
         </button>
 
         <p className="text-center text-sm text-muted-foreground">
