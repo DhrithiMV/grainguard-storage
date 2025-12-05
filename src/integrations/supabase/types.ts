@@ -14,7 +14,164 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      facilities: {
+        Row: {
+          address: string
+          available_capacity_kg: number
+          capacity_kg: number
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          images: string[] | null
+          is_active: boolean
+          latitude: number
+          longitude: number
+          max_temperature: number
+          min_temperature: number
+          name: string
+          price_per_kg_month: number
+          rating: number | null
+          supported_grains: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          available_capacity_kg?: number
+          capacity_kg?: number
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          images?: string[] | null
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          max_temperature?: number
+          min_temperature?: number
+          name: string
+          price_per_kg_month?: number
+          rating?: number | null
+          supported_grains?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          available_capacity_kg?: number
+          capacity_kg?: number
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          images?: string[] | null
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          max_temperature?: number
+          min_temperature?: number
+          name?: string
+          price_per_kg_month?: number
+          rating?: number | null
+          supported_grains?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          preferred_language: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          preferred_language?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          preferred_language?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reservations: {
+        Row: {
+          created_at: string
+          end_date: string
+          facility_id: string
+          grains: string[]
+          id: string
+          payment_status: string | null
+          quantity_kg: number
+          start_date: string
+          status: string
+          target_temperature: number | null
+          temperature_mode: string | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          facility_id: string
+          grains?: string[]
+          id?: string
+          payment_status?: string | null
+          quantity_kg: number
+          start_date: string
+          status?: string
+          target_temperature?: number | null
+          temperature_mode?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          facility_id?: string
+          grains?: string[]
+          id?: string
+          payment_status?: string | null
+          quantity_kg?: number
+          start_date?: string
+          status?: string
+          target_temperature?: number | null
+          temperature_mode?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservations_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
